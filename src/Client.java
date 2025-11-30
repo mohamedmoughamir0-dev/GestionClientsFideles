@@ -74,7 +74,7 @@ public void totalAchatParClient(Map<Integer, Client> clients)
 }
 
 
-    public  List<Client>  trierClientDec(Map<Integer, Client> clients)
+    public static List<Client>  trierClientDec(Map<Integer, Client> clients)
     { List<Client> sorted = clients.values().stream()
             .sorted((cl1, cl2) -> Double.compare(
                     cl2.getAchats().stream().mapToDouble(Achat::getMontant).sum(),
@@ -85,7 +85,7 @@ public void totalAchatParClient(Map<Integer, Client> clients)
         return sorted;
     }
     // Filtrer les clients Gold (>500€)
-public List<Client> clientPlus500(Map<Integer, Client> clients)
+public static List<Client> clientPlus500(Map<Integer, Client> clients)
 { List<Client> goldClients = clients.values().stream()
         .filter(cl -> cl.getAchats().stream().mapToDouble(Achat::getMontant).sum() > 500)
         .collect(Collectors.toList());
