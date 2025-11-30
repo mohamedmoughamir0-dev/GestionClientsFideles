@@ -1,9 +1,14 @@
 public class ClientFidele extends Client {
     private String niveauFidelite; // Bronze / Silver / Gold
 
-    public ClientFidele(int id, String nom, String email, String niveauFidelite) {
-        super(id, nom, email);
+    public ClientFidele( int id,String nom, String email, String niveauFidelite) {
+        super(id ,nom, email);
         this.niveauFidelite = niveauFidelite;
+    }
+
+    public ClientFidele() {
+        super( 0, "","");
+        this.niveauFidelite = "";
     }
 
     public String getNiveauFidelite() {

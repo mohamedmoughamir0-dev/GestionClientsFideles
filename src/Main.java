@@ -1,29 +1,105 @@
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+        Connection connection = databaseConn.getConnection();
 
-        Map<Integer, Client> clients = new HashMap<>();
-        Client c1 = new ClientFidele(1, "mohamed", "mohamed@gmail.com", "Bronze");
-        Client c2 = new ClientFidele(2, "adam", "adam@gmail.com", "Silver");
-        Client c3 = new ClientFidele(3, "saad", "saad@gmail.com", "Gold");
+        Map<Integer, Client> clients=databaseConn.recupererDonnees();
 
-        c1.getAchats().add(new Achat(100, LocalDate.now()));
-        c1.getAchats().add(new Achat(50, LocalDate.now()));
+        Client.exporterGoldJSON(clients, "gold_clients.json");
+        //clients.values().forEach(System.out::println);
+        //databaseConn.ajouterclient("elmahi","saad@gmail.com","gold");
+        //databaseConn.ajouterAchat(23.21, 2, LocalDate.now());*
+        Scanner scanner= new Scanner(System.in);
+        int choix=1;
+        do{
 
-        c2.getAchats().add(new Achat(300, LocalDate.now()));
-        c2.getAchats().add(new Achat(300, LocalDate.now()));
 
-        clients.put(c1.getId(), c1);
-        clients.put(c2.getId(), c2);
-        clients.put(c3.getId(), c3);
+            System.out.println("\033[1;36m");
+            System.out.println("╔══════════════════════════════════════════════════════════════╗");
+            System.out.println("║                  GESTION DES CLIENTS FIDÈLES                 ║");
+            System.out.println("╠══════════════════════════════════════════════════════════════╣");
+            System.out.println("║ \033[0m\033[1;32m1\033[0m - Afficher les clients                                     \033[1;36m║");
+            System.out.println("║ \033[0m\033[1;32m2\033[0m - Ajouter un client                                        \033[1;36m║");
+            System.out.println("║ \033[0m\033[1;32m3\033[0m - Ajouter un achat                                         \033[1;36m║");
+            System.out.println("║ \033[0m\033[1;32m4\033[0m - Calculer total des achats d'un client                    \033[1;36m║");
+            System.out.println("║ \033[0m\033[1;32m5\033[0m - Exporter JSON des clients Gold                           \033[1;36m║");
+            System.out.println("║ \033[0m\033[1;31m0\033[0m - Quitter                                                  \033[1;36m║");
+            System.out.println("╚══════════════════════════════════════════════════════════════╝");
+            System.out.print("\033[0m➤ Votre choix : ");
+        choix = scanner.nextInt();
+        scanner.nextLine();
+        switch(choix) {
+            case 1:
+                clients.values().forEach(System.out::println);
+                break;
+            case 2:
+                System.out.println("saisir nom du client :  ");
+                String nom = scanner.nextLine();
+                System.out.println("saisir email du client :  ");
+                String email = scanner.nextLine();
 
-        System.out.println("=== CLIENTS CRÉÉS ===");
-        clients.values().forEach(System.out::println);
+                String nv;
+                do {
+                    System.out.println("saisir niveau de fidelete du client (bronze - silver - gold):  ");
+                    nv = scanner.nextLine();
+                } while (!nv.equals("gold") && !nv.equals("silver") && !nv.equals("bronze") );
+                databaseConn.ajouterclient(nom, email, nv);
+                //mise a j collection clients
+                clients=databaseConn.recupererDonnees();
+                break;
+            case 3:
+                System.out.print("id client : ");
+                int idClient = scanner.nextInt();
+                scanner.nextLine();
+                System.out.print("Montant : ");
+                double montant = scanner.nextDouble();
+                scanner.nextLine(); // fix
+
+                databaseConn.ajouterAchat(montant, idClient, LocalDate.now());
+                clients = databaseConn.recupererDonnees();
+                break;
+
+            case 4: // Total achats d'un client
+                System.out.print("ID du client : ");
+                int idC = scanner.nextInt();
+                scanner.nextLine();
+
+                Client client = clients.get(idC);
+                if (client != null) {
+                    try {
+                        System.out.println("Total : " + client.calculerTotal() + " €");
+                    } catch (HistoriqueAchatVideException e) {
+                        System.out.println(e.getMessage());
+                    }
+                } else {
+                    System.out.println("Client introuvable !");
+                }
+                break;
+            case 5:
+            Client.exporterGoldJSON(clients, "gold_clients.json");
+            break;
+            case 0:
+                System.out.println("AU REVOIR !");
+                break;
+
+            default:
+                System.out.println("Choix invalide !");
+
+
+        }
+        }while(choix!=0);
+        scanner.close();
+      /*
+
+
 
         // Test exception pour historique vide
         try {
@@ -34,27 +110,12 @@ public class Main {
             System.out.println(" EXCEPTION CAPTURÉE : " + e.getMessage());
         }
 
-        // Calcul du total par client
-        System.out.println("\n=== TOTAL DES ACHATS PAR CLIENT ===");
-        clients.values().forEach(cl -> {
-            double totalAchats = cl.getAchats().stream().mapToDouble(Achat::getMontant).sum();
-            System.out.println(cl.getNom() + " a dépensé : " + totalAchats + "€");
-        });
 
-        // Filtrer les clients Gold (>500€)
-        List<Client> goldClients = clients.values().stream()
-                .filter(cl -> cl.getAchats().stream().mapToDouble(Achat::getMontant).sum() > 500)
-                .collect(Collectors.toList());
-        System.out.println("\n=== CLIENTS GOLD ===");
-        goldClients.forEach(System.out::println);
 
-        // Trier les clients par total décroissant
-        List<Client> sorted = clients.values().stream()
-                .sorted((cl1, cl2) -> Double.compare(
-                        cl2.getAchats().stream().mapToDouble(Achat::getMontant).sum(),
-                        cl1.getAchats().stream().mapToDouble(Achat::getMontant).sum()))
-                .collect(Collectors.toList());
-        System.out.println("\n=== CLIENTS TRIÉS PAR ACHATS DÉCROISSANTS ===");
-        sorted.forEach(System.out::println);
+
+
+
+        */
+
     }
 }
